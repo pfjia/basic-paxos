@@ -1,6 +1,6 @@
 package runtime;
 
-import datastructure.RoleAddress;
+import datastructure.NodeAddress;
 import message.PaxosMessage;
 
 import java.io.ByteArrayOutputStream;
@@ -39,9 +39,9 @@ public class SendMessageThread extends Thread {
 		Socket socket;
 		ObjectOutputStream objectOutputStream = null;
         PaxosMessage message = this.messageToSend;
-        RoleAddress receiverAddress = message.getReceiverAddress();
+        NodeAddress receiverAddress = message.getReceiverAddress();
 		try {
-			socket = new Socket(receiverAddress.getIp(), receiverAddress.getPortNumber());
+			socket = new Socket(receiverAddress.getIp(), receiverAddress.getPort());
 			objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
 			objectOutputStream.writeObject(this.messageToSend);
 			objectOutputStream.flush();
@@ -61,14 +61,14 @@ public class SendMessageThread extends Thread {
 
     public void runOnUDP() {
 
-        RoleAddress receiverAddress = this.messageToSend.getReceiverAddress();
+        NodeAddress receiverAddress = this.messageToSend.getReceiverAddress();
         try {
             DatagramSocket socket = new DatagramSocket();
             ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
             ObjectOutputStream objectStream = new ObjectOutputStream(byteArrayStream);
             objectStream.writeObject(this.messageToSend);
             byte[] arr = byteArrayStream.toByteArray();
-            DatagramPacket packet = new DatagramPacket(arr, arr.length, receiverAddress.getIp(), receiverAddress.getPortNumber());
+            DatagramPacket packet = new DatagramPacket(arr, arr.length, receiverAddress.getIp(), receiverAddress.getPort());
             socket.send(packet);
             synchronized (System.out) {
                 System.out.println(this.messageToSend.toSendString());

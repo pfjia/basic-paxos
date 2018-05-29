@@ -1,23 +1,31 @@
 package runtime;
 
-import datastructure.PaxosValue;
-import datastructure.RoleAddress;
 import role.Acceptor;
 import role.Learner;
+import role.Node;
 import role.Proposer;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 
 public class Main {
 	
-	public static void main(String[] args) throws IOException {
-        GlobalConfig.INSTANCE.init(Integer.parseInt(args[0]), ConnectionProtocol.TCP_CONNECTION);
-        Proposer proposer = new Proposer(GlobalConfig.INSTANCE.getCurrentRoleAddressByRoleClass(Proposer.class));
-        Acceptor acceptor = new Acceptor(GlobalConfig.INSTANCE.getCurrentRoleAddressByRoleClass(Acceptor.class));
-        Learner learner = new Learner(GlobalConfig.INSTANCE.getCurrentRoleAddressByRoleClass(Learner.class));
-        proposer.start();
-        acceptor.start();
-        learner.start();
+	public static void main(String[] args) throws UnknownHostException {
+	    Quorum quorum=new Quorum();
+	    Node a=new Node(50000);
+	    a.setRole(new Proposer());
+	    a.setRole(new Acceptor());
+	    Node b=new Node(60000);
+	    b.setRole(new Proposer());
+	    b.setRole(new Acceptor());
+	    Node c=new Node(70000);
+	    c.setRole(new Proposer());
+	    c.setRole(new Acceptor());
+	    quorum.addNode(a);
+	    quorum.addNode(b);
+	    quorum.addNode(c);
+	    quorum.start();
+
         new Thread(new ClientRequestHandler(proposer)).start();
     }
 }

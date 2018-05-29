@@ -1,10 +1,10 @@
 package runtime;
 
 import com.google.gson.Gson;
-import datastructure.RoleAddress;
+import datastructure.NodeAddress;
 import role.Acceptor;
 import role.Learner;
-import role.PaxosRole;
+import role.Node;
 import role.Proposer;
 
 import java.io.BufferedReader;
@@ -62,49 +62,49 @@ public enum GlobalConfig {
         return CLIENT_PORT;
     }
 
-    public RoleAddress getCurrentRoleAddressByRoleClass(Class paxosRoleClass) {
+    public NodeAddress getCurrentRoleAddressByRoleClass(Class paxosRoleClass) {
         if (paxosRoleClass.equals(Proposer.class)) {
-            return (new RoleAddress(this.localIp, GlobalConfig.PROPOSER_PORT));
+            return (new NodeAddress(this.localIp, GlobalConfig.PROPOSER_PORT));
         } else if (paxosRoleClass.equals(Acceptor.class)) {
-            return (new RoleAddress(this.localIp, GlobalConfig.ACCEPTOR_PORT));
+            return (new NodeAddress(this.localIp, GlobalConfig.ACCEPTOR_PORT));
         } else if (paxosRoleClass.equals(Learner.class)) {
-            return (new RoleAddress(this.localIp, GlobalConfig.LEARNER_PORT));
+            return (new NodeAddress(this.localIp, GlobalConfig.LEARNER_PORT));
         } else {
             assert false:"Invalid PaxosRole class: " + paxosRoleClass;
             return null;
         }
     }
 
-    public RoleAddress getCurrentRoleAddressByRole(PaxosRole paxosRole) {
-        return this.getCurrentRoleAddressByRoleClass(paxosRole.getClass());
+    public NodeAddress getCurrentRoleAddressByRole(Node node) {
+        return this.getCurrentRoleAddressByRoleClass(node.getClass());
     }
 
-    public RoleAddress[] getAllProposerAddresses() {
+    public NodeAddress[] getAllProposerAddresses() {
         int numberOfPaxosHosts = this.paxosHosts.length;
-        RoleAddress[] allProposerAddresses = new RoleAddress[numberOfPaxosHosts];
+        NodeAddress[] allProposerAddresses = new NodeAddress[numberOfPaxosHosts];
         int i;
         for (i=0; i<numberOfPaxosHosts; i++) {
-            allProposerAddresses[i] = new RoleAddress(this.paxosHosts[i], GlobalConfig.PROPOSER_PORT);
+            allProposerAddresses[i] = new NodeAddress(this.paxosHosts[i], GlobalConfig.PROPOSER_PORT);
         }
         return allProposerAddresses;
     }
 
-    public RoleAddress[] getAllAcceptorAddresses() {
+    public NodeAddress[] getAllAcceptorAddresses() {
         int numberOfPaxosHosts = this.paxosHosts.length;
-        RoleAddress[] allAcceptorAddresses = new RoleAddress[numberOfPaxosHosts];
+        NodeAddress[] allAcceptorAddresses = new NodeAddress[numberOfPaxosHosts];
         int i;
         for (i=0; i<numberOfPaxosHosts; i++) {
-            allAcceptorAddresses[i] = new RoleAddress(this.paxosHosts[i], GlobalConfig.ACCEPTOR_PORT);
+            allAcceptorAddresses[i] = new NodeAddress(this.paxosHosts[i], GlobalConfig.ACCEPTOR_PORT);
         }
         return allAcceptorAddresses;
     }
 
-    public RoleAddress[] getAllLearnerAddresses() {
+    public NodeAddress[] getAllLearnerAddresses() {
         int numberOfPaxosHosts = this.paxosHosts.length;
-        RoleAddress[] allLearnerAddresses = new RoleAddress[numberOfPaxosHosts];
+        NodeAddress[] allLearnerAddresses = new NodeAddress[numberOfPaxosHosts];
         int i;
         for (i=0; i<numberOfPaxosHosts; i++) {
-            allLearnerAddresses[i] = new RoleAddress(this.paxosHosts[i], GlobalConfig.LEARNER_PORT);
+            allLearnerAddresses[i] = new NodeAddress(this.paxosHosts[i], GlobalConfig.LEARNER_PORT);
         }
         return allLearnerAddresses;
     }
@@ -113,20 +113,20 @@ public enum GlobalConfig {
         return this.paxosHosts.length/2 + 1;
     }
 
-    public int whichNodeIsThisAddress(RoleAddress roleAddress) {
+    public int whichNodeIsThisAddress(NodeAddress nodeAddress) {
         int numberOfPaxosHosts = this.paxosHosts.length;
         int nodeNumber = -1;
         for (int i=0; i<numberOfPaxosHosts; i++) {
-            if (this.paxosHosts[i].equals(roleAddress.getIp())) {
+            if (this.paxosHosts[i].equals(nodeAddress.getIp())) {
                 nodeNumber=i;
             }
         }
         return nodeNumber;
     }
 
-    public Class whichRoleIsThisAddress(RoleAddress roleAddress) {
+    public Class whichRoleIsThisAddress(NodeAddress nodeAddress) {
 
-        switch (roleAddress.getPortNumber()) {
+        switch (nodeAddress.getPort()) {
             case GlobalConfig.PROPOSER_PORT:
                 return Proposer.class;
             case GlobalConfig.ACCEPTOR_PORT:
@@ -134,7 +134,7 @@ public enum GlobalConfig {
             case GlobalConfig.LEARNER_PORT:
                 return Learner.class;
             default:
-                assert false:"roleAddress is invalid:" + roleAddress;
+                assert false:"roleAddress is invalid:" + nodeAddress;
                 return null;
         }
     }

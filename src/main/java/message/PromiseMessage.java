@@ -1,8 +1,8 @@
 package message;
 
+import datastructure.NodeAddress;
 import datastructure.PaxosValue;
 import datastructure.ProposalNumber;
-import datastructure.RoleAddress;
 
 public class PromiseMessage extends PaxosMessage {
 
@@ -10,7 +10,7 @@ public class PromiseMessage extends PaxosMessage {
 	private ProposalNumber proposalNumber;
 	private PaxosValue paxosValue;
 	
-	public PromiseMessage(boolean promised, ProposalNumber proposalNumber, PaxosValue paxosValue, RoleAddress senderAddress, RoleAddress receiverAddress) {
+	public PromiseMessage(boolean promised, ProposalNumber proposalNumber, PaxosValue paxosValue, NodeAddress senderAddress, NodeAddress receiverAddress) {
 		super(senderAddress, receiverAddress);
 		this.promised = promised;
 		this.proposalNumber = proposalNumber;
@@ -29,6 +29,7 @@ public class PromiseMessage extends PaxosMessage {
 		return paxosValue;
 	}
 	
+	@Override
 	public String messageBodyToString() {
 		return String.format("Promise(%s,%d,%s)", this.promised?"YES":"NO", this.proposalNumber.getNumberValue(), this.paxosValue!=null?this.paxosValue.getValue():"NULL");
 	}

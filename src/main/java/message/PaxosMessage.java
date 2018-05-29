@@ -1,33 +1,34 @@
 package message;
 
-import datastructure.RoleAddress;
+import datastructure.NodeAddress;
 
 import java.io.Serializable;
 import java.util.Date;
 
 public abstract class PaxosMessage implements Serializable {
 
-	private RoleAddress senderAddress;
-	private RoleAddress receiverAddress;
+	private NodeAddress senderAddress;
+	private NodeAddress receiverAddress;
 	
 	private PaxosMessage() {
 		
 	}
 	
-	public PaxosMessage(RoleAddress senderAddress, RoleAddress receiverAddress) {
+	public PaxosMessage(NodeAddress senderAddress, NodeAddress receiverAddress) {
 		this.senderAddress = senderAddress;
 		this.receiverAddress = receiverAddress;
 	}
 	
-	public RoleAddress getSenderAddress() {
+	public NodeAddress getSenderAddress() {
 		return senderAddress;
 	}
-	public RoleAddress getReceiverAddress() {
+	public NodeAddress getReceiverAddress() {
 		return receiverAddress;
 	}
 	
 	abstract public String messageBodyToString();
 	
+	@Override
 	public String toString() {
 		return String.format("\t%s\t%-20s\t%s\t", this.senderAddress.toString(), this.messageBodyToString(), this.receiverAddress.toString());
 	}

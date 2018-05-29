@@ -1,7 +1,7 @@
 package runtime;
 
 import message.PaxosMessage;
-import role.PaxosRole;
+import role.Node;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -14,21 +14,17 @@ public class MessageReceiverThread extends Thread {
 
     private ConnectionProtocol runOnTCPOrUDP = ConnectionProtocol.TCP_CONNECTION;
 
-    private int portNumber;
-    private PaxosRole roleInstance;
+    private int port;
+    private Node node;
 
-    public MessageReceiverThread(int portNumber, PaxosRole roleInstance) {
-
+    public MessageReceiverThread(int port, Node node) {
         this.runOnTCPOrUDP = GlobalConfig.INSTANCE.getConnectionProtocol();
-        this.portNumber = portNumber;
-        this.roleInstance = roleInstance;
-
-        this.start();
+        this.port = port;
+        this.node = node;
     }
 
     @Override
     public synchronized void run() {
-
         switch (this.runOnTCPOrUDP) {
             case TCP_CONNECTION:
                 this.runOnTCP();
@@ -45,7 +41,7 @@ public class MessageReceiverThread extends Thread {
         ObjectInputStream objectInputStream;
         PaxosMessage message = null;
         try {
-            serverSocket = new ServerSocket(this.portNumber);
+            serverSocket = new ServerSocket(this.port);
             while (true) {
                 socket = serverSocket.accept();
                 objectInputStream = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
@@ -57,7 +53,7 @@ public class MessageReceiverThread extends Thread {
                     System.out.println(message.toReceiveString());
                     System.out.flush();
                 }
-                this.roleInstance.handleMessage(message);
+                this.node.handleMessage(message);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -73,7 +69,7 @@ public class MessageReceiverThread extends Thread {
         byte[] buffer = new byte[1024];
         PaxosMessage message = null;
         try {
-            datagramSocket = new DatagramSocket(this.portNumber);
+            datagramSocket = new DatagramSocket(this.port);
             DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
             datagramSocket.receive(receivedPacket);
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buffer);
@@ -91,6 +87,6 @@ public class MessageReceiverThread extends Thread {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-        this.roleInstance.handleMessage(message);
+        this.node.handleMessage(message);
     }
 }

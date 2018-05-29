@@ -1,7 +1,6 @@
 package runtime;
 
 import datastructure.PaxosValue;
-import datastructure.RoleAddress;
 import role.Proposer;
 
 import java.io.IOException;

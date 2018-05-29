@@ -1,15 +1,15 @@
 package message;
 
+import datastructure.NodeAddress;
 import datastructure.PaxosValue;
 import datastructure.ProposalNumber;
-import datastructure.RoleAddress;
 
 public class AcceptedMessage extends PaxosMessage {
 
 	private ProposalNumber proposalNumber;
 	private PaxosValue paxosValue;
 
-	public AcceptedMessage(ProposalNumber proposalNumber, PaxosValue value, RoleAddress senderAddress, RoleAddress receiverAddress) {
+	public AcceptedMessage(ProposalNumber proposalNumber, PaxosValue value, NodeAddress senderAddress, NodeAddress receiverAddress) {
 		super(senderAddress, receiverAddress);
 		this.proposalNumber = proposalNumber;
 		this.paxosValue = value;
