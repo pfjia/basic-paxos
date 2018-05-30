@@ -6,9 +6,6 @@ public class PaxosValue implements Serializable {
 
     private String paxosString = null;
 
-    private PaxosValue() {
-
-    }
 
     public PaxosValue(String paxosValue) {
         this.paxosString = paxosValue;

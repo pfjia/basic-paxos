@@ -1,50 +1,50 @@
 package datastructure;
 
-import runtime.GlobalConfig;
-
 import java.io.Serializable;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class ProposalNumber implements Serializable, Comparable<ProposalNumber>{
+public class ProposalNumber implements Serializable, Comparable<ProposalNumber> {
 
-	public static int currentNumber = GlobalConfig.INSTANCE.getCurrentNodeNumber();
-	private int numberValue;
+    /**
+     * 保证全局唯一递增的proposalNumber
+     */
+    private static AtomicInteger currentNumber = new AtomicInteger(0);
+    private int number;
 
-	public ProposalNumber() {
-		this.numberValue = currentNumber + GlobalConfig.INSTANCE.getMaximumNodeNumber();
-		currentNumber = this.numberValue;
-	}
-
-    public ProposalNumber(int numberValue) {
-        this.numberValue = numberValue;
-        currentNumber = this.numberValue;
+    public ProposalNumber() {
+        this.number = currentNumber.getAndIncrement();
     }
 
-	public int getNumberValue() {
-		return numberValue;
-	}
-	
-	public boolean equals(ProposalNumber arg0) {
-		if (this.getNumberValue() == arg0.getNumberValue()) {
-			return true;
-		} else {
-			return false;
-		}
-	}
+    public ProposalNumber(int number) {
+        this.number = number;
+    }
 
-	@Override
-	public int compareTo(ProposalNumber arg0) {
-        ProposalNumber proposalNumber = (ProposalNumber) arg0;
-        if (this.getNumberValue() == proposalNumber.getNumberValue()) {
-            return 0;
-        } else if (this.getNumberValue() < proposalNumber.getNumberValue()) {
-            return -1;
-        } else {
-            return 1;
-        }
+    public int getNumber() {
+        return number;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ProposalNumber that = (ProposalNumber) o;
+        return number == that.number;
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(number);
+    }
+
+    @Override
+    public int compareTo(ProposalNumber o) {
+        return Integer.compare(this.getNumber(), o.getNumber());
     }
 
     @Override
     public String toString() {
-        return Integer.toString(this.numberValue);
+        return Integer.toString(this.number);
     }
 }

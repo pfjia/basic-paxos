@@ -1,6 +1,5 @@
 package role;
 
-import message.AcceptedMessage;
 import message.PaxosMessage;
 import runtime.GlobalConfig;
 

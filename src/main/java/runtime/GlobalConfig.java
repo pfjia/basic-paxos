@@ -1,7 +1,6 @@
 package runtime;
 
 import com.google.gson.Gson;
-import datastructure.NodeAddress;
 import role.Acceptor;
 import role.Learner;
 import role.Node;

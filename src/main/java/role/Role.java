@@ -8,8 +8,6 @@ import message.PaxosMessage;
  */
 public interface Role {
 
-    void handleMessage(PaxosMessage paxosMessage);
-
     void sendMessage(PaxosMessage message);
 
 

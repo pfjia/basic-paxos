@@ -1,27 +1,134 @@
 package role;
 
-import datastructure.NodeAddress;
 import datastructure.PaxosValue;
 import datastructure.ProposalNumber;
-import message.*;
-import runtime.GlobalConfig;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.serialization.ClassResolvers;
+import io.netty.handler.codec.serialization.ObjectDecoder;
+import io.netty.handler.codec.serialization.ObjectEncoder;
+import message.AcceptRequest;
+import message.PaxosMessage;
+import message.PrepareRequest;
+import message.PrepareResponse;
+import netty.handler.ProposerAcceptReceivedHandler;
+import netty.handler.ProposerPrepareReceivedHandler;
 
-import java.util.ArrayList;
+import java.net.SocketAddress;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
-public class Proposer implements Role{
-
-    //NOTICE: this.reset() does not reset iAmLeader
+public class Proposer implements Role {
     private Node node;
-    private boolean iAmLeader = false;
 
     private ProposalNumber currentProposalNumber = null;
     private PaxosValue requestedValue = null;
-    private int numberOfPromises = 0;
-    private ProposalNumber highestAcceptedProposalNumber = null;
-    private PaxosValue paxosValueOfHighestAcceptedProposalNumber = null;
-    private ArrayList<NodeAddress> quorum = null;
-    private boolean ignoreNewPromiseMessage = false;
 
+    private Map<PrepareResponse, SocketAddress> prepareResponseMap = new HashMap<>();
+    private int numberOfPrepareRequest = 0;
+    /**
+     * promise为true的prepare response个数
+     */
+    private int numberOfPromise = 0;
+    /**
+     * promise为false的prepare response个数
+     */
+    private int numberOfNotPromise = 0;
+
+
+    private int numberOfAcceptRequest = 0;
+
+    private int numberOfAccepted = 0;
+    private int numberOfNotAccepted = 0;
+
+
+    public int getNumberOfAcceptRequest() {
+        return numberOfAcceptRequest;
+    }
+
+    public void setNumberOfAcceptRequest(int numberOfAcceptRequest) {
+        this.numberOfAcceptRequest = numberOfAcceptRequest;
+    }
+
+    public int getNumberOfAccepted() {
+        return numberOfAccepted;
+    }
+
+    public void setNumberOfAccepted(int numberOfAccepted) {
+        this.numberOfAccepted = numberOfAccepted;
+    }
+
+    public void incrementNumberOfAccepted() {
+        numberOfAccepted++;
+    }
+
+    public void incrementNumberOfNotAccepted() {
+        numberOfNotAccepted++;
+    }
+
+    public int getNumberOfNotAccepted() {
+        return numberOfNotAccepted;
+    }
+
+    public void setNumberOfNotAccepted(int numberOfNotAccepted) {
+        this.numberOfNotAccepted = numberOfNotAccepted;
+    }
+
+    public Map<PrepareResponse, SocketAddress> getPrepareResponseMap() {
+        return prepareResponseMap;
+    }
+
+    public void setPrepareResponseMap(Map<PrepareResponse, SocketAddress> prepareResponseMap) {
+        this.prepareResponseMap = prepareResponseMap;
+    }
+
+
+    public int getNumberOfPrepareRequest() {
+        return numberOfPrepareRequest;
+    }
+
+    public void setNumberOfPrepareRequest(int numberOfPrepareRequest) {
+        this.numberOfPrepareRequest = numberOfPrepareRequest;
+    }
+
+    public void incrementNumberOfNotPromise() {
+        numberOfNotPromise++;
+    }
+
+    public void incrementNumberOfPromise() {
+        numberOfPromise++;
+    }
+
+    public int getNumberOfPromise() {
+        return numberOfPromise;
+    }
+
+    public int getNumberOfNotPromise() {
+        return numberOfNotPromise;
+    }
+
+    public ProposalNumber getCurrentProposalNumber() {
+        return currentProposalNumber;
+    }
+
+    public void setCurrentProposalNumber(ProposalNumber currentProposalNumber) {
+        this.currentProposalNumber = currentProposalNumber;
+    }
+
+    /**
+     * @return 集群法定人数
+     */
+    public int getQuorum() {
+        int totalNumber = getNode().getQuorum().getNodeList().size();
+        return Math.floorDiv(totalNumber, 2) + 1;
+    }
 
     @Override
     public Node getNode() {
@@ -33,115 +140,94 @@ public class Proposer implements Role{
         this.node = node;
     }
 
-    public void reset() {
-        this.currentProposalNumber = null;
-        this.requestedValue = null;
-        this.numberOfPromises = 0;
-        this.highestAcceptedProposalNumber = null;
-        this.paxosValueOfHighestAcceptedProposalNumber = null;
-        this.quorum = null;
-        this.ignoreNewPromiseMessage = false;
-    }
-
-    public void initiatePaxos(PaxosValue paxosValue) {
-        this.reset();
-        System.out.println("Paxos is initiated with Paxos Value: " + paxosValue);
-        this.requestedValue = paxosValue;
-        sendPrepareMessage();
-    }
-
-    private void sendPrepareMessage() {
+    public void resetPrepare() {
         this.currentProposalNumber = new ProposalNumber();
-        for (Node node1 : getNode().getQuorum().getAcceptorList()) {
-
-        }
-        NodeAddress[] allAcceptorAddresses = GlobalConfig.INSTANCE.getAllAcceptorAddresses();
-
-        for (NodeAddress acceptorReceiverAddress : allAcceptorAddresses) {
-            this.sendMessage(new PrepareMessage(this.currentProposalNumber, this.address, acceptorReceiverAddress));
-        }
+        numberOfPrepareRequest = 0;
+        numberOfNotPromise = 0;
+        numberOfPromise = 0;
+        prepareResponseMap.clear();
     }
 
-    private void resendPrepareMessage() {
-        NodeAddress[] allAcceptorAddresses = GlobalConfig.INSTANCE.getAllAcceptorAddresses();
-        ProposalNumber tempProposalNumber = this.highestAcceptedProposalNumber;
-        PaxosValue tempPaxosValue = this.requestedValue;
-        this.reset();
-        this.currentProposalNumber = new ProposalNumber(tempProposalNumber.getNumberValue() + 1);
-        this.requestedValue = tempPaxosValue;
-
-        for (NodeAddress acceptorReceiverAddress : allAcceptorAddresses) {
-            this.sendMessage(new PrepareMessage(this.currentProposalNumber, this.address, acceptorReceiverAddress));
-        }
+    public void resetAccept() {
+        numberOfAcceptRequest = 0;
+        numberOfAccepted = 0;
+        numberOfNotAccepted = 0;
     }
 
-    private void sendAcceptRequestMessage(ProposalNumber proposalNumber, PaxosValue paxosValue, NodeAddress senderAddress, ArrayList<NodeAddress> receiverAddresses) {
-        for (NodeAddress receiverAddress : receiverAddresses) {
-            this.sendMessage(new AcceptRequestMessage(proposalNumber, paxosValue, senderAddress, receiverAddress));
-        }
+
+    @Override
+    public void start() {
+
     }
 
     @Override
-    public void handleMessage(PaxosMessage message) {
-        if (message instanceof PromiseMessage) {
-            if (this.ignoreNewPromiseMessage == false) {
+    public void sendMessage(PaxosMessage message) {
+        sendMessage(message.getReceiverAddress(), message);
+    }
 
-                boolean isPromised = ((PromiseMessage) message).isPromised();
-                ProposalNumber receivedNumber = ((PromiseMessage) message).getProposalNumber();
-                PaxosValue receivedValue = ((PromiseMessage) message).getPaxosValue();
 
-                if (isPromised && this.currentProposalNumber != null && this.currentProposalNumber.equals(receivedNumber)) {
-                    (this.numberOfPromises)++;
-                } else {
-
-                }
-
-                if (quorum == null) {
-                    quorum = new ArrayList<NodeAddress>();
-                } else {
-
-                }
-
-                quorum.add(message.getSenderAddress());
-
-                if (receivedNumber != null && this.currentProposalNumber != null && receivedNumber.compareTo(this.currentProposalNumber) > 0 && (this.highestAcceptedProposalNumber == null || receivedNumber != null && this.highestAcceptedProposalNumber != null && receivedNumber.compareTo(this.highestAcceptedProposalNumber) > 0)) {
-                    if (this.iAmLeader == true) {
-                        System.out.println("LEADER RESEND!!");
-                        this.resendPrepareMessage();
-                    } else {
-                        this.highestAcceptedProposalNumber = receivedNumber;
-                        this.paxosValueOfHighestAcceptedProposalNumber = receivedValue;
-                    }
-                } else {
-
-                }
-
-                if (this.numberOfPromises >= GlobalConfig.INSTANCE.getNumberOfQuorum()) {    // Needs to set a value
-                    /*
-                     * I didn't store currentProposalNumber in highestAcceptedProposalNumber because they have different meaning, even their types are same.
-                     */
-                    if (this.highestAcceptedProposalNumber == null) {
-                        this.sendAcceptRequestMessage(this.currentProposalNumber, this.requestedValue, message.getReceiverAddress(), this.quorum);
-                    } else {
-                        this.sendAcceptRequestMessage(this.highestAcceptedProposalNumber, this.paxosValueOfHighestAcceptedProposalNumber, message.getReceiverAddress(), this.quorum);
-                    }
-                    this.ignoreNewPromiseMessage = true;
-                } else {
-                    // wait more promise
-                }
-
-            } else {
-
-            }
-
-        } else if (message instanceof AcceptedMessage && this.currentProposalNumber != null && ((AcceptedMessage) message).getProposalNumber().compareTo(this.currentProposalNumber) >= 0) {
-            this.reset();
-        } else {
-            // Something wrong, what kind of exception to throw?
+    private void sendMessage(SocketAddress dest, PaxosMessage paxosMessage) {
+        EventLoopGroup group = new NioEventLoopGroup(1);
+        try {
+            Bootstrap bootstrap = new Bootstrap();
+            bootstrap
+                    .group(group)
+                    .channel(NioSocketChannel.class)
+                    .remoteAddress(dest)
+                    .handler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            ch.pipeline().addLast(new ObjectDecoder(ClassResolvers.cacheDisabled(this.getClass().getClassLoader())));
+                            ch.pipeline().addLast(new ObjectEncoder());
+                            ch.pipeline().addLast(new ProposerPrepareReceivedHandler(Proposer.this));
+                            ch.pipeline().addLast(new ProposerAcceptReceivedHandler(Proposer.this));
+                        }
+                    });
+            ChannelFuture future = bootstrap.connect().sync();
+            future.channel().writeAndFlush(paxosMessage);
+            future.channel().closeFuture().sync();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            group.shutdownGracefully();
         }
     }
 
-    public boolean isiAmLeader() {
-        return iAmLeader;
+    public void sendPrepareRequest() {
+        resetPrepare();
+        for (Node n : getNode().getQuorum().getAcceptorList()) {
+            sendMessage(n.getAddress(), new PrepareRequest(currentProposalNumber));
+        }
+        numberOfPrepareRequest = getNode().getQuorum().getAcceptorList().size();
+    }
+
+
+    /**
+     * Proposer进入accept阶段,计算proposal value,将其发送到回复prepare request的所有节点
+     */
+    public void sendAcceptRequest() {
+        //1.计算prepare response中最大proposal number的value
+        PaxosValue paxosValue = getPrepareResponseMap()
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getKey().getProposalNumber().equals(currentProposalNumber))
+                .max(Comparator.comparing(o -> o.getKey().getProposalNumber()))
+                .map(entry -> entry.getKey().getPaxosValue())
+                .orElse(new PaxosValue("123"));
+        //2.发送accept request
+        getPrepareResponseMap()
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getKey().getProposalNumber().equals(currentProposalNumber))
+                .forEach(
+                        new Consumer<Map.Entry<PrepareResponse, SocketAddress>>() {
+                            @Override
+                            public void accept(Map.Entry<PrepareResponse, SocketAddress> entry) {
+                                AcceptRequest request = new AcceptRequest(currentProposalNumber, paxosValue);
+                                SocketAddress dest = entry.getValue();
+                                sendMessage(dest, request);
+                            }
+                        }
+                );
     }
 }

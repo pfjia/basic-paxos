@@ -1,39 +1,45 @@
 package role;
 
 import message.PaxosMessage;
-import runtime.MessageReceiverThread;
 import runtime.Quorum;
-import runtime.SendMessageThread;
 
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * @author pfjia
+ * @since 2018/5/30 15:36
+ */
 public class Node {
     private String name;
-    private InetAddress host;
-    private int port;
+    private InetSocketAddress address;
     private Set<Role> roleSet = new HashSet<>();
     private Quorum quorum;
 
     public Node(int port) throws UnknownHostException {
-        this(InetAddress.getLocalHost(), port);
+        this.address = new InetSocketAddress(port);
     }
 
     public Node(String host, int port) throws UnknownHostException {
-        this(InetAddress.getByName(host), port);
+        this.address = new InetSocketAddress(host, port);
     }
 
-    public Node(InetAddress host, int port) {
-        this.host = host;
-        this.port = port;
+    public InetSocketAddress getAddress() {
+        return address;
     }
 
+    public void setAddress(InetSocketAddress address) {
+        this.address = address;
+    }
 
     public String getName() {
-        return Objects.requireNonNullElse(name, host.toString() + port);
+        if (Objects.nonNull(name)) {
+            return name;
+        }
+        return address.toString();
     }
 
     public void setName(String name) {
@@ -53,22 +59,27 @@ public class Node {
         role.setNode(this);
     }
 
+    public Proposer getProposer() {
+        return roleSet.stream().filter(role -> role instanceof Proposer)
+                .map(role -> (Proposer) role)
+                .findAny().orElse(null);
+    }
+
     public boolean hasRole(Class<? extends Role> roleClass) {
         return roleSet.stream().anyMatch(roleClass::isInstance);
     }
 
     public void start() {
-        new MessageReceiverThread(port, this).start();
+        for (Role role : roleSet) {
+            role.start();
+        }
     }
+
 
     public void handleMessage(PaxosMessage message) {
         for (Role role : roleSet) {
             role.handleMessage(message);
         }
-    }
-
-    public void sendMessage(PaxosMessage message) {
-        (new SendMessageThread(message)).start();
     }
 
 }
