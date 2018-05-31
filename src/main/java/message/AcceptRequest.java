@@ -4,17 +4,14 @@ import datastructure.PaxosValue;
 import datastructure.ProposalNumber;
 
 import java.net.InetSocketAddress;
-
-public class AcceptRequest extends PaxosMessage {
+/**
+ * @author pfjia
+ * @since 2018/5/30 14:05
+ */
+public class AcceptRequest extends AbstractPaxosMessage {
 
 	private ProposalNumber proposalNumber;
 	private PaxosValue paxosValue;
-
-	public AcceptRequest(ProposalNumber proposalNumber, PaxosValue value, InetSocketAddress senderAddress, InetSocketAddress receiverAddress) {
-		super(senderAddress, receiverAddress);
-		this.proposalNumber = proposalNumber;
-		this.paxosValue = value;
-	}
 
     public AcceptRequest(ProposalNumber proposalNumber, PaxosValue paxosValue) {
         this.proposalNumber = proposalNumber;

@@ -6,19 +6,15 @@ import java.util.Date;
 
 /**
  * @author pfjia
+ * @since 2018/5/30 14:05
  */
-public abstract class PaxosMessage implements Serializable {
+public abstract class AbstractPaxosMessage implements Serializable {
 
     private InetSocketAddress senderAddress;
     private InetSocketAddress receiverAddress;
 
-    public PaxosMessage() {
+    public AbstractPaxosMessage() {
 
-    }
-
-    public PaxosMessage(InetSocketAddress senderAddress, InetSocketAddress receiverAddress) {
-        this.senderAddress = senderAddress;
-        this.receiverAddress = receiverAddress;
     }
 
     public InetSocketAddress getSenderAddress() {

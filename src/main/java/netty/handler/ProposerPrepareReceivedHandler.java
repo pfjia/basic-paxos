@@ -2,7 +2,7 @@ package netty.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import message.PaxosMessage;
+import message.AbstractPaxosMessage;
 import message.PrepareResponse;
 import role.Proposer;
 
@@ -19,17 +19,12 @@ public class ProposerPrepareReceivedHandler extends ChannelInboundHandlerAdapter
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        PaxosMessage paxosMessage = (PaxosMessage) msg;
-        if (paxosMessage instanceof PrepareResponse) {
-            PrepareResponse response = (PrepareResponse) paxosMessage;
+        AbstractPaxosMessage abstractPaxosMessage = (AbstractPaxosMessage) msg;
+        if (abstractPaxosMessage instanceof PrepareResponse) {
+            PrepareResponse response = (PrepareResponse) abstractPaxosMessage;
             //1.确保是对currentProposalNumber的回应
             if (response.getProposalNumber().compareTo(proposer.getCurrentProposalNumber()) == 0) {
-                //2.修改proposer属性
-                if (response.isPromised()) {
-                    proposer.incrementNumberOfPromise();
-                } else {
-                    proposer.incrementNumberOfNotPromise();
-                }
+                //2.保存Prepare response
                 proposer.getPrepareResponseMap().put(response, ctx.channel().remoteAddress());
                 //3.判断是否足够法定人数
                 if (proposer.getNumberOfPromise() >= proposer.getQuorum()) {

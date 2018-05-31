@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
  * @since 2018/5/29 22:21
  */
 public class Quorum {
-    List<Node> nodeList = new ArrayList<>();
+    private List<Node> nodeList = new ArrayList<>();
 
     public void addNode(Node node) {
         nodeList.add(node);

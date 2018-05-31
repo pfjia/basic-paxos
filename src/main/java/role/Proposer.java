@@ -12,8 +12,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
+import message.AbstractPaxosMessage;
 import message.AcceptRequest;
-import message.PaxosMessage;
 import message.PrepareRequest;
 import message.PrepareResponse;
 import netty.handler.ProposerAcceptReceivedHandler;
@@ -25,26 +25,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+/**
+ * @author pfjia
+ * @since 2018/5/30 14:05
+ */
 public class Proposer implements Role {
     private Node node;
 
     private ProposalNumber currentProposalNumber = null;
-    private PaxosValue requestedValue = null;
 
     private Map<PrepareResponse, SocketAddress> prepareResponseMap = new HashMap<>();
     private int numberOfPrepareRequest = 0;
-    /**
-     * promise为true的prepare response个数
-     */
-    private int numberOfPromise = 0;
-    /**
-     * promise为false的prepare response个数
-     */
-    private int numberOfNotPromise = 0;
 
 
     private int numberOfAcceptRequest = 0;
-
     private int numberOfAccepted = 0;
     private int numberOfNotAccepted = 0;
 
@@ -98,20 +92,23 @@ public class Proposer implements Role {
         this.numberOfPrepareRequest = numberOfPrepareRequest;
     }
 
-    public void incrementNumberOfNotPromise() {
-        numberOfNotPromise++;
+
+    public long getNumberOfPromise() {
+        return getPrepareResponseMap()
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getKey().getProposalNumber().equals(currentProposalNumber))
+                .filter(entry -> entry.getKey().isPromised())
+                .count();
     }
 
-    public void incrementNumberOfPromise() {
-        numberOfPromise++;
-    }
-
-    public int getNumberOfPromise() {
-        return numberOfPromise;
-    }
-
-    public int getNumberOfNotPromise() {
-        return numberOfNotPromise;
+    public long getNumberOfNotPromise() {
+        return getPrepareResponseMap()
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getKey().getProposalNumber().equals(currentProposalNumber))
+                .filter(entry -> !entry.getKey().isPromised())
+                .count();
     }
 
     public ProposalNumber getCurrentProposalNumber() {
@@ -143,8 +140,6 @@ public class Proposer implements Role {
     public void resetPrepare() {
         this.currentProposalNumber = new ProposalNumber();
         numberOfPrepareRequest = 0;
-        numberOfNotPromise = 0;
-        numberOfPromise = 0;
         prepareResponseMap.clear();
     }
 
@@ -161,12 +156,12 @@ public class Proposer implements Role {
     }
 
     @Override
-    public void sendMessage(PaxosMessage message) {
+    public void sendMessage(AbstractPaxosMessage message) {
         sendMessage(message.getReceiverAddress(), message);
     }
 
 
-    private void sendMessage(SocketAddress dest, PaxosMessage paxosMessage) {
+    private void sendMessage(SocketAddress dest, AbstractPaxosMessage abstractPaxosMessage) {
         EventLoopGroup group = new NioEventLoopGroup(1);
         try {
             Bootstrap bootstrap = new Bootstrap();
@@ -184,7 +179,7 @@ public class Proposer implements Role {
                         }
                     });
             ChannelFuture future = bootstrap.connect().sync();
-            future.channel().writeAndFlush(paxosMessage);
+            future.channel().writeAndFlush(abstractPaxosMessage);
             future.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             e.printStackTrace();

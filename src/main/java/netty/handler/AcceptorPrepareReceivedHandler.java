@@ -2,7 +2,7 @@ package netty.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import message.PaxosMessage;
+import message.AbstractPaxosMessage;
 import message.PrepareRequest;
 import message.PrepareResponse;
 import role.Acceptor;
@@ -20,11 +20,11 @@ public class AcceptorPrepareReceivedHandler extends ChannelInboundHandlerAdapter
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        PaxosMessage paxosMessage = (PaxosMessage) msg;
+        AbstractPaxosMessage abstractPaxosMessage = (AbstractPaxosMessage) msg;
 
-        if (paxosMessage instanceof PrepareRequest) {
+        if (abstractPaxosMessage instanceof PrepareRequest) {
             PrepareResponse response = new PrepareResponse();
-            PrepareRequest request = (PrepareRequest) paxosMessage;
+            PrepareRequest request = (PrepareRequest) abstractPaxosMessage;
             if (acceptor.getPromisedProposalNumber() == null) {
                 //尚未接收任何proposalNumber
                 acceptor.setPromisedProposalNumber(request.getProposalNumber());

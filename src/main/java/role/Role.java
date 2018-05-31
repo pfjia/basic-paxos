@@ -1,6 +1,6 @@
 package role;
 
-import message.PaxosMessage;
+import message.AbstractPaxosMessage;
 
 /**
  * @author pfjia
@@ -8,13 +8,15 @@ import message.PaxosMessage;
  */
 public interface Role {
 
-    void sendMessage(PaxosMessage message);
-
+    void sendMessage(AbstractPaxosMessage message);
 
     Node getNode();
 
     void setNode(Node node);
 
+    /**
+     * 开始paxos算法,集群达到一致后停止
+     */
     void start();
 
 }

@@ -1,6 +1,6 @@
 package role;
 
-import message.PaxosMessage;
+import message.AbstractPaxosMessage;
 import runtime.Quorum;
 
 import java.net.InetSocketAddress;
@@ -74,12 +74,4 @@ public class Node {
             role.start();
         }
     }
-
-
-    public void handleMessage(PaxosMessage message) {
-        for (Role role : roleSet) {
-            role.handleMessage(message);
-        }
-    }
-
 }

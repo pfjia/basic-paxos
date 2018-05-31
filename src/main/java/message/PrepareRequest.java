@@ -6,7 +6,7 @@ import datastructure.ProposalNumber;
  * @author pfjia
  * @since 2018/5/30 14:04
  */
-public class PrepareRequest extends PaxosMessage {
+public class PrepareRequest extends AbstractPaxosMessage {
     private ProposalNumber proposalNumber;
 
     public PrepareRequest(ProposalNumber proposalNumber) {

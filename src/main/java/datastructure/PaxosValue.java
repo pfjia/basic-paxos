@@ -2,21 +2,25 @@ package datastructure;
 
 import java.io.Serializable;
 
+/**
+ * @author pfjia
+ * @since 2018/5/30 14:05
+ */
 public class PaxosValue implements Serializable {
 
-    private String paxosString = null;
+    private String value = null;
 
 
     public PaxosValue(String paxosValue) {
-        this.paxosString = paxosValue;
+        this.value = paxosValue;
     }
 
     public String getValue() {
-        return this.paxosString;
+        return this.value;
     }
 
     @Override
     public String toString() {
-        return this.paxosString != null ? this.paxosString : "RequestLeader";
+        return this.value != null ? this.value : "RequestLeader";
     }
 }

@@ -1,22 +1,30 @@
 package role;
 
-import message.PaxosMessage;
-import runtime.GlobalConfig;
+import message.AbstractPaxosMessage;
 
+/**
+ * @author pfjia
+ * @since 2018/5/30 14:05
+ */
 public class Learner implements Role {
 
     @Override
-    public void handleMessage(PaxosMessage message) {
-        super.handleMessage(message);
-        assert (message instanceof AcceptedMessage);
-        synchronized (System.out) {
-            System.out.println("Learner " + GlobalConfig.INSTANCE.getCurrentNodeNumber() + " get the Paxos value: " + ((AcceptedMessage) message).getPaxosValue().getValue());
-            System.out.flush();
-        }
+    public Node getNode() {
+        return null;
     }
 
     @Override
-    public void sendMessage(PaxosMessage message) {
+    public void setNode(Node node) {
+
+    }
+
+    @Override
+    public void start() {
+
+    }
+
+    @Override
+    public void sendMessage(AbstractPaxosMessage message) {
 
     }
 

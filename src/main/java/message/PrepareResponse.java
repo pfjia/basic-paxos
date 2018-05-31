@@ -9,7 +9,7 @@ import java.util.Objects;
  * @author pfjia
  * @since 2018/5/30 14:04
  */
-public class PrepareResponse extends PaxosMessage {
+public class PrepareResponse extends AbstractPaxosMessage {
     private boolean promised;
     // FIXME: 2018/5/30 需要标识该response是对哪个PrepareRequest的回复吗(返回PrepareRequest的proposalNumber)?
     /**

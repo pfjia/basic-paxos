@@ -12,10 +12,13 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
-import message.PaxosMessage;
+import message.AbstractPaxosMessage;
 import netty.handler.AcceptorAcceptReceivedHandler;
 import netty.handler.AcceptorPrepareReceivedHandler;
-
+/**
+ * @author pfjia
+ * @since 2018/5/30 14:05
+ */
 public class Acceptor implements Role {
     private Node node;
     private ProposalNumber promisedProposalNumber = null;
@@ -50,7 +53,7 @@ public class Acceptor implements Role {
 
 
     @Override
-    public void sendMessage(PaxosMessage message) {
+    public void sendMessage(AbstractPaxosMessage message) {
 
     }
 

@@ -3,7 +3,7 @@ package netty.handler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import message.AcceptResponse;
-import message.PaxosMessage;
+import message.AbstractPaxosMessage;
 import role.Proposer;
 
 /**
@@ -20,9 +20,9 @@ public class ProposerAcceptReceivedHandler extends ChannelInboundHandlerAdapter 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         //1.接受prepare response
-        PaxosMessage paxosMessage = (PaxosMessage) msg;
-        if (paxosMessage instanceof AcceptResponse) {
-            AcceptResponse response = (AcceptResponse) paxosMessage;
+        AbstractPaxosMessage abstractPaxosMessage = (AbstractPaxosMessage) msg;
+        if (abstractPaxosMessage instanceof AcceptResponse) {
+            AcceptResponse response = (AcceptResponse) abstractPaxosMessage;
             if (response.getCorrespondingProposalNumber().equals(proposer.getCurrentProposalNumber())) {
                 //2.修改proposer属性
                 if (response.isAccept()) {

@@ -4,16 +4,20 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * @author pfjia
+ * @since 2018/5/30 14:05
+ */
 public class ProposalNumber implements Serializable, Comparable<ProposalNumber> {
 
     /**
      * 保证全局唯一递增的proposalNumber
      */
-    private static AtomicInteger currentNumber = new AtomicInteger(0);
+    private static AtomicInteger SEED = new AtomicInteger(0);
     private int number;
 
     public ProposalNumber() {
-        this.number = currentNumber.getAndIncrement();
+        this.number = SEED.getAndIncrement();
     }
 
     public ProposalNumber(int number) {
