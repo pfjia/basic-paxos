@@ -24,12 +24,12 @@ public class AcceptorAcceptReceivedHandler extends ChannelInboundHandlerAdapter 
         if (abstractPaxosMessage instanceof AcceptRequest) {
             AcceptRequest request = (AcceptRequest) abstractPaxosMessage;
             AcceptResponse response;
-            if (request.getProposalNumber().equals(acceptor.getAcceptedProposalNumber())) {
-                response=new AcceptResponse(request.getProposalNumber(),true);
+            if (request.getProposalNumber().equals(acceptor.getPromisedProposalNumber())) {
+                response=new AcceptResponse(request.getReceiver(),request.getSender(),request.getProposalNumber(),true);
                 acceptor.setAcceptedProposalNumber(request.getProposalNumber());
                 acceptor.setAcceptedPaxosValue(request.getValue());
             }else {
-                response=new AcceptResponse(request.getProposalNumber(),false);
+                response=new AcceptResponse(request.getReceiver(),request.getSender(),request.getProposalNumber(),false);
             }
             ctx.writeAndFlush(response);
         } else {

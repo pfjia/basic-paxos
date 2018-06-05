@@ -17,13 +17,14 @@ public class ProposerPrepareReceivedHandler extends ChannelInboundHandlerAdapter
         this.proposer = proposer;
     }
 
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         AbstractPaxosMessage abstractPaxosMessage = (AbstractPaxosMessage) msg;
         if (abstractPaxosMessage instanceof PrepareResponse) {
             PrepareResponse response = (PrepareResponse) abstractPaxosMessage;
             //1.确保是对currentProposalNumber的回应
-            if (response.getProposalNumber().compareTo(proposer.getCurrentProposalNumber()) == 0) {
+            if (response.getCorrespondingProposalNumber().compareTo(proposer.getCurrentProposalNumber()) == 0) {
                 //2.保存Prepare response
                 proposer.getPrepareResponseMap().put(response, ctx.channel().remoteAddress());
                 //3.判断是否足够法定人数

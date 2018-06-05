@@ -28,4 +28,8 @@ public class Learner implements Role {
 
     }
 
+    @Override
+    public void init() {
+
+    }
 }

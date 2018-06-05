@@ -15,6 +15,9 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import message.AbstractPaxosMessage;
 import netty.handler.AcceptorAcceptReceivedHandler;
 import netty.handler.AcceptorPrepareReceivedHandler;
+import netty.handler.LogInboundHandler;
+import netty.handler.LogOutboundHandler;
+
 /**
  * @author pfjia
  * @since 2018/5/30 14:05
@@ -57,6 +60,44 @@ public class Acceptor implements Role {
 
     }
 
+
+    @Override
+    public void init() {
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                //1.设置Acceptor监听线程
+                EventLoopGroup group = new NioEventLoopGroup(1);
+                try {
+                    ServerBootstrap bootstrap = new ServerBootstrap();
+                    bootstrap.group(group)
+                            .channel(NioServerSocketChannel.class)
+                            .localAddress(getNode().getAddress().getPort())
+                            .childHandler(
+                                    new ChannelInitializer<SocketChannel>() {
+                                        @Override
+                                        protected void initChannel(SocketChannel ch) throws Exception {
+                                            ch.pipeline().addLast(new ObjectEncoder());
+                                            ch.pipeline().addLast(new ObjectDecoder(ClassResolvers.cacheDisabled(this.getClass().getClassLoader())));
+                                            ch.pipeline().addLast(new LogInboundHandler()).addLast(new LogOutboundHandler());
+                                            ch.pipeline().addLast(new AcceptorPrepareReceivedHandler(Acceptor.this));
+                                            ch.pipeline().addLast(new AcceptorAcceptReceivedHandler(Acceptor.this));
+                                        }
+                                    }
+                            );
+                    //确保bind()完成
+                    ChannelFuture future = bootstrap.bind().sync();
+                    future.channel().closeFuture().sync();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    group.shutdownGracefully();
+                }
+            }
+        };
+        new Thread(runnable).start();
+    }
+
     @Override
     public Node getNode() {
         return node;
@@ -69,30 +110,6 @@ public class Acceptor implements Role {
 
     @Override
     public void start() {
-        //1.设置Acceptor监听线程
-        EventLoopGroup group = new NioEventLoopGroup();
-        try {
-            ServerBootstrap bootstrap = new ServerBootstrap();
-            bootstrap.group(group)
-                    .channel(NioServerSocketChannel.class)
-                    .localAddress(getNode().getAddress().getPort())
-                    .childHandler(
-                            new ChannelInitializer<SocketChannel>() {
-                                @Override
-                                protected void initChannel(SocketChannel ch) throws Exception {
-                                    ch.pipeline().addLast(new ObjectEncoder());
-                                    ch.pipeline().addLast(new ObjectDecoder(ClassResolvers.cacheDisabled(this.getClass().getClassLoader())));
-                                    ch.pipeline().addLast(new AcceptorPrepareReceivedHandler(Acceptor.this));
-                                    ch.pipeline().addLast(new AcceptorAcceptReceivedHandler(Acceptor.this));
-                                }
-                            }
-                    );
-            ChannelFuture future = bootstrap.bind().sync();
-            future.channel().closeFuture().sync();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
-            group.shutdownGracefully();
-        }
+
     }
 }

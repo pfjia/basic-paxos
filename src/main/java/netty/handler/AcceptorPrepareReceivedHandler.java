@@ -18,13 +18,14 @@ public class AcceptorPrepareReceivedHandler extends ChannelInboundHandlerAdapter
         this.acceptor = acceptor;
     }
 
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         AbstractPaxosMessage abstractPaxosMessage = (AbstractPaxosMessage) msg;
-
         if (abstractPaxosMessage instanceof PrepareRequest) {
-            PrepareResponse response = new PrepareResponse();
             PrepareRequest request = (PrepareRequest) abstractPaxosMessage;
+            PrepareResponse response = new PrepareResponse(acceptor.getNode(),request.getSender());
+            response.setCorrespondingProposalNumber(request.getProposalNumber());
             if (acceptor.getPromisedProposalNumber() == null) {
                 //尚未接收任何proposalNumber
                 acceptor.setPromisedProposalNumber(request.getProposalNumber());

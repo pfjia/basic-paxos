@@ -1,5 +1,6 @@
 package netty.handler;
 
+import com.jfinal.kit.LogKit;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import message.AcceptResponse;
@@ -37,6 +38,7 @@ public class ProposerAcceptReceivedHandler extends ChannelInboundHandlerAdapter 
                         public void run() {
                             //足够法定人数,集群达到一致,结束
                             // TODO: 2018/5/30
+                            LogKit.info("一致了");
                         }
                     });
                 } else if (proposer.getNumberOfNotAccepted() > (proposer.getNumberOfPrepareRequest() + proposer.getQuorum())) {

@@ -1,6 +1,10 @@
 package message;
 
+import datastructure.PaxosValue;
 import datastructure.ProposalNumber;
+import role.Node;
+
+import java.util.Optional;
 
 /**
  * @author pfjia
@@ -14,7 +18,8 @@ public class AcceptResponse extends AbstractPaxosMessage {
     private ProposalNumber correspondingProposalNumber;
     private boolean accept;
 
-    public AcceptResponse(ProposalNumber correspondingProposalNumber, boolean accept) {
+    public AcceptResponse(Node sender, Node receiver, ProposalNumber correspondingProposalNumber, boolean accept) {
+        super(sender,receiver);
         this.correspondingProposalNumber = correspondingProposalNumber;
         this.accept = accept;
     }
@@ -29,7 +34,8 @@ public class AcceptResponse extends AbstractPaxosMessage {
 
     @Override
     public String messageBodyToString() {
-        return null;
+        return String.format("Accept(%s)", accept?"YES":"NO");
+
     }
 
     public ProposalNumber getCorrespondingProposalNumber() {
@@ -39,5 +45,4 @@ public class AcceptResponse extends AbstractPaxosMessage {
     public void setCorrespondingProposalNumber(ProposalNumber correspondingProposalNumber) {
         this.correspondingProposalNumber = correspondingProposalNumber;
     }
-
 }

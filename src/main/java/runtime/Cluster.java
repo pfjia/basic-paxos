@@ -4,6 +4,7 @@ import role.Acceptor;
 import role.Node;
 import role.Proposer;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -12,12 +13,12 @@ import java.util.stream.Collectors;
  * @author pfjia
  * @since 2018/5/29 22:21
  */
-public class Quorum {
+public class Cluster implements Serializable {
     private List<Node> nodeList = new ArrayList<>();
 
     public void addNode(Node node) {
         nodeList.add(node);
-        node.setQuorum(this);
+        node.setCluster(this);
     }
 
     public List<Node> getNodeList() {
@@ -33,6 +34,9 @@ public class Quorum {
     }
 
     public void start() {
+        for (Node node : nodeList) {
+            node.init();
+        }
         for (Node node : nodeList) {
             node.start();
         }

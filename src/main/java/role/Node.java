@@ -1,10 +1,9 @@
 package role;
 
-import message.AbstractPaxosMessage;
-import runtime.Quorum;
+import runtime.Cluster;
 
+import java.io.Serializable;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -13,17 +12,17 @@ import java.util.Set;
  * @author pfjia
  * @since 2018/5/30 15:36
  */
-public class Node {
+public class Node implements Serializable {
     private String name;
     private InetSocketAddress address;
     private Set<Role> roleSet = new HashSet<>();
-    private Quorum quorum;
+    private Cluster cluster;
 
-    public Node(int port) throws UnknownHostException {
-        this.address = new InetSocketAddress(port);
+    public Node(int port) {
+        this("localhost", port);
     }
 
-    public Node(String host, int port) throws UnknownHostException {
+    public Node(String host, int port) {
         this.address = new InetSocketAddress(host, port);
     }
 
@@ -46,12 +45,12 @@ public class Node {
         this.name = name;
     }
 
-    public Quorum getQuorum() {
-        return quorum;
+    public Cluster getCluster() {
+        return cluster;
     }
 
-    public void setQuorum(Quorum quorum) {
-        this.quorum = quorum;
+    public void setCluster(Cluster cluster) {
+        this.cluster = cluster;
     }
 
     public void setRole(Role role) {
@@ -67,6 +66,12 @@ public class Node {
 
     public boolean hasRole(Class<? extends Role> roleClass) {
         return roleSet.stream().anyMatch(roleClass::isInstance);
+    }
+
+    public void init() {
+        for (Role role : roleSet) {
+            role.init();
+        }
     }
 
     public void start() {

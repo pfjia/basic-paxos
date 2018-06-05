@@ -16,13 +16,17 @@ import message.AbstractPaxosMessage;
 import message.AcceptRequest;
 import message.PrepareRequest;
 import message.PrepareResponse;
+import netty.handler.LogInboundHandler;
+import netty.handler.LogOutboundHandler;
 import netty.handler.ProposerAcceptReceivedHandler;
 import netty.handler.ProposerPrepareReceivedHandler;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -34,10 +38,8 @@ public class Proposer implements Role {
 
     private ProposalNumber currentProposalNumber = null;
 
-    private Map<PrepareResponse, SocketAddress> prepareResponseMap = new HashMap<>();
+    private Map<PrepareResponse, SocketAddress> prepareResponseMap = new ConcurrentHashMap<>();
     private int numberOfPrepareRequest = 0;
-
-
     private int numberOfAcceptRequest = 0;
     private int numberOfAccepted = 0;
     private int numberOfNotAccepted = 0;
@@ -92,12 +94,16 @@ public class Proposer implements Role {
         this.numberOfPrepareRequest = numberOfPrepareRequest;
     }
 
+    @Override
+    public void init() {
+
+    }
 
     public long getNumberOfPromise() {
         return getPrepareResponseMap()
                 .entrySet()
                 .stream()
-                .filter(entry -> entry.getKey().getProposalNumber().equals(currentProposalNumber))
+                .filter(entry -> entry.getKey().getCorrespondingProposalNumber().equals(currentProposalNumber))
                 .filter(entry -> entry.getKey().isPromised())
                 .count();
     }
@@ -106,7 +112,7 @@ public class Proposer implements Role {
         return getPrepareResponseMap()
                 .entrySet()
                 .stream()
-                .filter(entry -> entry.getKey().getProposalNumber().equals(currentProposalNumber))
+                .filter(entry -> entry.getKey().getCorrespondingProposalNumber().equals(currentProposalNumber))
                 .filter(entry -> !entry.getKey().isPromised())
                 .count();
     }
@@ -123,7 +129,7 @@ public class Proposer implements Role {
      * @return 集群法定人数
      */
     public int getQuorum() {
-        int totalNumber = getNode().getQuorum().getNodeList().size();
+        int totalNumber = getNode().getCluster().getNodeList().size();
         return Math.floorDiv(totalNumber, 2) + 1;
     }
 
@@ -152,12 +158,12 @@ public class Proposer implements Role {
 
     @Override
     public void start() {
-
+        sendPrepareRequest();
     }
 
     @Override
     public void sendMessage(AbstractPaxosMessage message) {
-        sendMessage(message.getReceiverAddress(), message);
+        sendMessage(message.getReceiver().getAddress(), message);
     }
 
 
@@ -174,11 +180,13 @@ public class Proposer implements Role {
                         protected void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline().addLast(new ObjectDecoder(ClassResolvers.cacheDisabled(this.getClass().getClassLoader())));
                             ch.pipeline().addLast(new ObjectEncoder());
+                            ch.pipeline().addLast(new LogInboundHandler()).addLast(new LogOutboundHandler());
                             ch.pipeline().addLast(new ProposerPrepareReceivedHandler(Proposer.this));
                             ch.pipeline().addLast(new ProposerAcceptReceivedHandler(Proposer.this));
                         }
                     });
             ChannelFuture future = bootstrap.connect().sync();
+            //连接之后,发送信息
             future.channel().writeAndFlush(abstractPaxosMessage);
             future.channel().closeFuture().sync();
         } catch (InterruptedException e) {
@@ -190,10 +198,10 @@ public class Proposer implements Role {
 
     public void sendPrepareRequest() {
         resetPrepare();
-        for (Node n : getNode().getQuorum().getAcceptorList()) {
-            sendMessage(n.getAddress(), new PrepareRequest(currentProposalNumber));
+        for (Node n : getNode().getCluster().getAcceptorList()) {
+            sendMessage(n.getAddress(), new PrepareRequest(getNode(), n, currentProposalNumber));
         }
-        numberOfPrepareRequest = getNode().getQuorum().getAcceptorList().size();
+        numberOfPrepareRequest = getNode().getCluster().getAcceptorList().size();
     }
 
 
@@ -205,7 +213,8 @@ public class Proposer implements Role {
         PaxosValue paxosValue = getPrepareResponseMap()
                 .entrySet()
                 .stream()
-                .filter(entry -> entry.getKey().getProposalNumber().equals(currentProposalNumber))
+                .filter(entry -> entry.getKey().getCorrespondingProposalNumber().equals(currentProposalNumber))
+                .filter(entry -> entry.getKey().getProposalNumber() != null)
                 .max(Comparator.comparing(o -> o.getKey().getProposalNumber()))
                 .map(entry -> entry.getKey().getPaxosValue())
                 .orElse(new PaxosValue("123"));
@@ -213,14 +222,13 @@ public class Proposer implements Role {
         getPrepareResponseMap()
                 .entrySet()
                 .stream()
-                .filter(entry -> entry.getKey().getProposalNumber().equals(currentProposalNumber))
+                .filter(entry -> entry.getKey().getCorrespondingProposalNumber().equals(currentProposalNumber))
                 .forEach(
                         new Consumer<Map.Entry<PrepareResponse, SocketAddress>>() {
                             @Override
                             public void accept(Map.Entry<PrepareResponse, SocketAddress> entry) {
-                                AcceptRequest request = new AcceptRequest(currentProposalNumber, paxosValue);
-                                SocketAddress dest = entry.getValue();
-                                sendMessage(dest, request);
+                                AcceptRequest request = new AcceptRequest(getNode(), entry.getKey().getSender(), currentProposalNumber, paxosValue);
+                                sendMessage(entry.getKey().getSender().getAddress(), request);
                             }
                         }
                 );

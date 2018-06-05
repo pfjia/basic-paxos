@@ -63,6 +63,11 @@
             <version>${log4j2.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.jfinal</groupId>
+            <artifactId>jfinal-java8</artifactId>
+            <version>3.4</version>
+        </dependency><!-- https://mvnrepository.com/artifact/cn.dreampie/jfinal-slf4j -->
     </dependencies>
     <build>
         <plugins>
@@ -70,8 +75,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>9</source>
-                    <target>9</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                     <encoding>utf-8</encoding>
                 </configuration>
             </plugin>

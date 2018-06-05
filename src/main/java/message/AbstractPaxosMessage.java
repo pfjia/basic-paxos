@@ -1,8 +1,10 @@
 package message;
 
+import role.Node;
+
 import java.io.Serializable;
-import java.net.InetSocketAddress;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * @author pfjia
@@ -10,19 +12,21 @@ import java.util.Date;
  */
 public abstract class AbstractPaxosMessage implements Serializable {
 
-    private InetSocketAddress senderAddress;
-    private InetSocketAddress receiverAddress;
+    private Node sender;
+    private Node receiver;
 
-    public AbstractPaxosMessage() {
 
+    public AbstractPaxosMessage(Node sender, Node receiver) {
+        this.sender = sender;
+        this.receiver = receiver;
     }
 
-    public InetSocketAddress getSenderAddress() {
-        return senderAddress;
+    public Node getSender() {
+        return sender;
     }
 
-    public InetSocketAddress getReceiverAddress() {
-        return receiverAddress;
+    public Node getReceiver() {
+        return receiver;
     }
 
     abstract public String messageBodyToString();
@@ -30,7 +34,7 @@ public abstract class AbstractPaxosMessage implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("\t%s\t%-20s\t%s\t", this.senderAddress.toString(), this.messageBodyToString(), this.receiverAddress.toString());
+        return String.format("\t%s\t%-20s\t%s\t", sender.getAddress(),  this.messageBodyToString(), receiver.getAddress());
     }
 
     public String toSendString() {
@@ -39,5 +43,20 @@ public abstract class AbstractPaxosMessage implements Serializable {
 
     public String toReceiveString() {
         return String.format("%d\t\t%s ----\tRECEIVE", (new Date()).getTime(), this.toString());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AbstractPaxosMessage that = (AbstractPaxosMessage) o;
+        return Objects.equals(sender, that.sender) &&
+                Objects.equals(receiver, that.receiver);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(sender, receiver);
     }
 }
